@@ -1,0 +1,78 @@
+---
+title: "Big Data Bowl Data Cleaning and Manipulation"
+author: "Kai Franke"
+date: "2023-12-20"
+output: html_document
+---
+
+This notebook contains the data cleaning processes for the Big Data Bowl 2024 for the UMN Sports Analytics Club.
+
+
+```{r Loading Libraries and Data}
+
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+
+setwd("C:/Users/kaifr/OneDrive/Miscellaneous/Desktop/Productivity/BDB2024/nfl-big-data-bowl-2024")
+file_list = list.files(path = "C:/Users/kaifr/OneDrive/Miscellaneous/Desktop/Productivity/BDB2024/nfl-big-data-bowl-2024")
+
+games = read.csv(file = "games.csv")
+players = read.csv(file = "players.csv")
+plays = read.csv(file = "plays.csv")
+tackles = read.csv(file = "tackles.csv")
+
+tracking = read.csv(file = "tracking_week_1.csv")
+
+for (i in 6:length(file_list)) {
+  
+  print(file_list[i])
+  tracking = rbind(tracking, read.csv(file = file_list[i]))
+  
+}
+
+```
+
+```{r Merging}
+
+colnames(players)
+colnames(plays)
+colnames(tackles)
+colnames(tracking)
+
+playTack = right_join(plays, tackles)
+trackPlay = right_join(playTack, tracking)
+track = right_join(players, trackPlay)
+trackFin = right_join(games, track)
+
+```
+
+```{r Quick Clean}
+
+track2 = trackFin %>%
+  arrange(gameDate, gameId, playId, displayName, frameId)
+
+track3 = track2 %>%
+  mutate(x = ifelse(playDirection == "left", 120 - x, x),
+         y = ifelse(playDirection == "left", 160 / 3 - y, y),
+         dir = ifelse(playDirection == "left", dir + 180, dir),
+         dir = ifelse(dir > 360, dir - 360, dir),
+         o = ifelse(playDirection == "left", o + 180, o),
+         o = ifelse(o > 360, o - 360, o))
+
+
+
+```
+
+```{r}
+
+wide_data <- track3 %>%
+     pivot_wider(
+         id_cols = c(frameId, gameId, playId),
+         names_from = position,
+         values_from = c(x, y),
+         names_glue = "{.value}_{position}"
+     )
+
+```
