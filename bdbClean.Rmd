@@ -7,6 +7,11 @@ output: html_document
 
 This notebook contains the data cleaning processes for the Big Data Bowl 2024 for the UMN Sports Analytics Club.
 
+# Data Cleaning and Manipulation
+
+## Loading in Data
+
+To load in the data, we simply just load the csv's. Then to get all of the tracking data, I just did a for loop through all of the csv's in the file. I also loaded in all of the necessary libraries.
 
 ```{r Loading Libraries and Data}
 
@@ -34,6 +39,10 @@ for (i in 6:14) {
 
 ```
 
+## Plays Data Edit
+
+These lines of code make it easier to understand what each of the pass results mean. I changed them from a simple letter to the entirety of what each letter means.
+
 ```{r}
 
 plays = plays %>%
@@ -45,6 +54,14 @@ plays = plays %>%
 
 ```
 
+
+## Merging Data
+
+To merge the data correctly, I needed to investigate each of the data frames. I looked into the column names and see how they correspond to each of the data sets. I also took a peek into the repository from Kaggle to see what each of the data sets have and what they mean.
+
+For the tackling information, I added that when the information was NA, that it is a 0. This means that the player was not a part of the tackle. I also created a column called 'partOfTackle' to signify whether or not the player had anything to do with the tackle attempt.
+
+I then removed the excess data sets.
 
 ```{r Merging}
 
@@ -70,6 +87,11 @@ rm(games, players, playerwTrack, playTack, PWTtack, tackles, trackGame, tracking
 
 ```
 
+
+## Standardizing
+
+The next step was to standardize the data depending on where the play was going. This makes it easier for analysis later on.
+
 ```{r Quick Clean}
 
 track2 = track %>%
@@ -86,6 +108,9 @@ track2 = track %>%
 
 ```
 
+## Looking at a play
+
+Next, I wanted to make sure the data looked right and looked at an example play to verify this and see if it made sense.
 
 ```{r}
 
@@ -119,3 +144,5 @@ wide_data = track2 %>%
      )
 
 ```
+
+
