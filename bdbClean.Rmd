@@ -25,7 +25,7 @@ tackles = read.csv(file = "tackles.csv")
 
 tracking = read.csv(file = "tracking_week_1.csv")
 
-for (i in 6:length(file_list)) {
+for (i in 6:14) {
   
   print(file_list[i])
   tracking = rbind(tracking, read.csv(file = file_list[i]))
@@ -34,6 +34,18 @@ for (i in 6:length(file_list)) {
 
 ```
 
+```{r}
+
+plays = plays %>%
+  mutate(passResult = ifelse(passResult == "C", "Complete pass", passResult),
+         passResult = ifelse(passResult == "I", "Inomplete pass", passResult),
+         passResult = ifelse(passResult == "S", "QB sack", passResult),
+         passResult = ifelse(passResult == "IN", "Intercepted pass", passResult),
+         passResult = ifelse(passResult == "R", "Scramble", passResult))
+
+```
+
+
 ```{r Merging}
 
 colnames(players)
@@ -41,19 +53,28 @@ colnames(plays)
 colnames(tackles)
 colnames(tracking)
 
-playTack = right_join(plays, tackles)
-trackPlay = right_join(playTack, tracking)
-track = right_join(players, trackPlay)
-trackFin = right_join(games, track)
+playerwTrack = left_join(tracking, players)
+PWTtack = left_join(playerwTrack, tackles)
+
+PWTtack = PWTtack %>%
+  mutate(tackle = ifelse(is.na(tackle), 0, tackle),
+         assist = ifelse(is.na(assist), 0, assist),
+         forcedFumble = ifelse(is.na(forcedFumble), 0, forcedFumble),
+         pff_missedTackle = ifelse(is.na(pff_missedTackle), 0, pff_missedTackle),
+         partOfTackle = ifelse(tackle + assist + forcedFumble + pff_missedTackle > 0, "Y", "N"))
+
+trackGame = right_join(games, PWTtack)
+track = left_join(trackGame, plays)
+
+rm(games, players, playerwTrack, playTack, PWTtack, tackles, trackGame, tracking, file_list, i)
 
 ```
 
 ```{r Quick Clean}
 
-track2 = trackFin %>%
-  arrange(gameDate, gameId, playId, displayName, frameId)
-
-track3 = track2 %>%
+track2 = track %>%
+  arrange(gameDate, gameId, playId, displayName, frameId) %>%
+  distinct() %>%
   mutate(x = ifelse(playDirection == "left", 120 - x, x),
          y = ifelse(playDirection == "left", 160 / 3 - y, y),
          dir = ifelse(playDirection == "left", dir + 180, dir),
@@ -65,9 +86,31 @@ track3 = track2 %>%
 
 ```
 
+
 ```{r}
 
-wide_data <- track3 %>%
+set.seed(2010)
+example_play = plays %>%
+  dplyr::select(gameId, playId, playDescription) %>% 
+  sample_n(1)
+example_play
+
+example_play_tracking_data = track2 %>%
+  inner_join(example_play, by = c("gameId", "playId"))
+
+
+ggplot(example_play_tracking_data, aes(x, y, color = partOfTackle)) +
+  geom_point() +
+  xlim(0,120) +
+  ylim(0, 53.3) +
+  coord_fixed()
+
+```
+
+
+```{r}
+
+wide_data = track2 %>%
      pivot_wider(
          id_cols = c(frameId, gameId, playId),
          names_from = position,
